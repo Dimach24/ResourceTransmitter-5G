@@ -1,0 +1,6 @@
+[submodule "ResourceMapper"]
+	path = ResourceMapper
+	url = git@github.com:Dimach24/ResourceMapper.git
+[submodule "SSGenerator"]
+	path = SSGenerator
+	url = git@github.com:Dimach24/SSGenerator.git
