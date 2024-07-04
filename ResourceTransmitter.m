@@ -2,7 +2,7 @@ classdef ResourceTransmitter
     methods(Static)
         function out_seq = Scramble(in_seq, N_Cell_ID, L_max, block_index)
             %ScrambleProcedure of revererse scrambling
-            % after demodulation [7.3.3.1, TS 38.211] 
+            % after demodulation [7.3.3.1, TS 38.211]
             arguments
                 in_seq (1,:) % input sequence (boolean matrix)
                 N_Cell_ID (1,1)
@@ -14,7 +14,7 @@ classdef ResourceTransmitter
             A = length(in_seq);
             s = zeros(1,A);
             M = A;
-        
+            
             %determinaton of nu
             block_index = fliplr(dec2bin(block_index));
             if L_max == 4
@@ -23,7 +23,7 @@ classdef ResourceTransmitter
                 nu = [block_index(3) block_index(2) block_index(1)];
             end
             nu = bin2dec(num2str(nu));
-        
+            
             %determination of c
             x1 = zeros(1,2000);
             x2 = zeros(1,2000);
@@ -36,7 +36,7 @@ classdef ResourceTransmitter
                 n1 = 1:160;
                 c(n1) = mod(x1(n1+1600)+x2(n1+1600),2);
             end
-        
+            
             %determination of s
             i = 0;
             j = 0;
@@ -49,8 +49,41 @@ classdef ResourceTransmitter
             %descrambling procedure
             out_seq = zeros (1,A);
             for i = 1:A
-            out_seq(i) = mod(in_seq(i)+ s(i),2);
+                out_seq(i) = mod(in_seq(i)+ s(i),2);
             end
+        end
+        function GenerateFrame(PbchBitstream,...
+                N_Cell_ID,...
+                scs,...
+                tran_bandwidth,...
+                BandwidthCase,...
+                SsbShifts,...
+                L_max,...
+                toffset,...
+                foffset,...
+                power_factor)
+            [pss,sss]=SsGenerator.getSsSignalsByCellInfo(N_Cell_ID);
+            R=ResourceMapper();
+            R.createResourceGrid(mu,1,false,scs,tran_bandwidth);
+            dmrs=zeros(2*Lmax,81);
+            for i=0:2*L_max-1
+                dmrs(i)=generatePbchDmRs(mod(i,L_max),N_Cell_ID);
+            end
+            i=0;
+            for block=PbchBitstream
+                i=1+i;
+                PbchQpsk=modulate(Scramble(block,N_Cell_ID,L_max,mod(i,L_max)));% TODO
+            end
+            
+            R.addSsBlockByCase(...
+                BandwidthCase,...
+                SsbShifts,...
+                N_Cell_ID,...
+                pss,sss,...
+                PbchQpsk,...
+                toffset,...
+                foffset,...
+                power_factor)
         end
     end
 end
