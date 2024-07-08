@@ -62,6 +62,7 @@ classdef ResourceTransmitter
                 toffset,...
                 foffset,...
                 power_factor)
+
             [pss,sss]=SsGenerator.getSsSignalsByCellInfo(N_Cell_ID);
             R=ResourceMapper();
             R.createResourceGrid(mu,1,false,scs,tran_bandwidth);
@@ -72,7 +73,7 @@ classdef ResourceTransmitter
             i=0;
             for block=PbchBitstream
                 i=1+i;
-                PbchQpsk=modulate(Scramble(block,N_Cell_ID,L_max,mod(i,L_max)));% TODO
+                PbchQpsk=QpskModulation(Scramble(block,N_Cell_ID,L_max,mod(i,L_max)));
             end
             
             R.addSsBlockByCase(...
