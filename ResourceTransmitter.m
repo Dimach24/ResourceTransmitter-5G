@@ -62,20 +62,30 @@ classdef ResourceTransmitter
                 toffset,...
                 foffset,...
                 power_factor)
-
+            
+            % Sync. signals
             [pss,sss]=SsGenerator.getSsSignalsByCellInfo(N_Cell_ID);
+
+            % The mapper
             R=ResourceMapper();
+
+            % 1 frame
             R.createResourceGrid(mu,1,false,scs,tran_bandwidth);
+            
+            % PBCH demodulation reference generation
             dmrs=zeros(2*Lmax,81);
             for i=0:2*L_max-1
                 dmrs(i)=generatePbchDmRs(mod(i,L_max),N_Cell_ID);
             end
+
+            % Processing (scrambling and modulation) PBCH data
             i=0;
             for block=PbchBitstream
                 i=1+i;
                 PbchQpsk=QpskModulation(Scramble(block,N_Cell_ID,L_max,mod(i,L_max)));
             end
             
+            % Mapping
             R.addSsBlockByCase(...
                 BandwidthCase,...
                 SsbShifts,...
