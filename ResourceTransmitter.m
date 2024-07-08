@@ -81,7 +81,7 @@ classdef ResourceTransmitter
             % Processing (scrambling and modulation) PBCH data
             i=0;
             for block=PbchBitstream
-                i_SSB=mod(i,L_max);
+                i_SSB=mod(mod(i,L_max),8);
                 PbchQpsk=QpskModulation(Scramble(block,N_Cell_ID,L_max,i_SSB));
                 i=i+1;
             end
