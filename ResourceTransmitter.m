@@ -16,7 +16,7 @@ classdef ResourceTransmitter
             M = A;
             
             %determinaton of nu
-            block_index = fliplr(dec2bin(block_index));
+            block_index = fliplr(dec2bin(block_index,3));
             if L_max == 4
                 nu = [block_index(2) block_index(1)];
             else
@@ -29,7 +29,7 @@ classdef ResourceTransmitter
             x2 = zeros(1,2000);
             x1(1) = 1;
             x1(2:31) = 0;
-            x2(1:31) = fliplr(dec2bin(N_Cell_ID,31)); %c_init = N_Cell_ID
+            x2(1:31) = fliplr(int2bit(N_Cell_ID,31)); %c_init = N_Cell_ID
             for n = 1:2000
                 x1(n+31) = mod(x1(n+3)+x1(n),2);
                 x2(n+31) = mod(x2(n+3)+x2(n+2)+x2(n+1)+x2(n),2);
@@ -41,7 +41,7 @@ classdef ResourceTransmitter
             i = 0;
             j = 0;
             while i < A
-                s(1+i) = c(1+j+nu*M);
+                s(1+i) = c(1+mod(j+nu*M,160));
                 j = j+1;
                 i = i+1;
             end
@@ -52,8 +52,10 @@ classdef ResourceTransmitter
                 out_seq(i) = mod(in_seq(i)+ s(i),2);
             end
         end
-        function RGrid=GenerateFrame(PbchBitstream,...
+        function RGrid=GenerateFrame(...
+                PbchBitstream,...
                 N_Cell_ID,...
+                mu, ...
                 scs,...
                 tran_bandwidth,...
                 BandwidthCase,...
@@ -62,7 +64,8 @@ classdef ResourceTransmitter
                 toffset,...
                 foffset,...
                 power_factor)
-            
+            % Generates frame with passed signals using ResourceMapper
+
             % Sync. signals
             [pss,sss]=SsGenerator.getSsSignalsByCellInfo(N_Cell_ID);
 
@@ -73,16 +76,18 @@ classdef ResourceTransmitter
             R.createResourceGrid(mu,1,false,scs,tran_bandwidth);
             
             % PBCH demodulation reference generation
-            dmrs=zeros(2*Lmax,81);
+            dmrs=zeros(2*L_max,144);
             for i=0:2*L_max-1
-                dmrs(i)=generatePbchDmRs(mod(i,L_max),N_Cell_ID);
+                c=generatePbchDmRs(mod(i,L_max),N_Cell_ID);
+                dmrs(i+1,:)=c(mod(1:144,81)+1);
             end
 
             % Processing (scrambling and modulation) PBCH data
             i=0;
             for block=PbchBitstream
                 i_SSB=mod(mod(i,L_max),8);
-                PbchQpsk=QpskModulation(Scramble(block,N_Cell_ID,L_max,i_SSB));
+                PbchQpsk(i+1,:)=QpskModulation(...
+                    ResourceTransmitter.Scramble(block,N_Cell_ID,L_max,i_SSB));
                 i=i+1;
             end
             
@@ -93,10 +98,11 @@ classdef ResourceTransmitter
                 N_Cell_ID,...
                 pss,sss,...
                 PbchQpsk,...
+                dmrs,...
                 toffset,...
                 foffset,...
                 power_factor)
-        RGrid=R.ResourcGrid();
+        RGrid=R.resourceGrid();
         end
     end
 end
